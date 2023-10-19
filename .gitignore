@@ -1,0 +1,8 @@
+# python compiled files
+__pycache__/
+
+# python environments
+venv/
+
+# dossier contenant les photos et les fichiers pickle
+photos/
