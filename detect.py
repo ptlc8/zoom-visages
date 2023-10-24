@@ -8,9 +8,9 @@ import base64
 
 # initialize dlib's face detector (HOG-based) and then create the facial landmark predictor
 detector = dlib.get_frontal_face_detector()
-predictor = dlib.shape_predictor("models/shape_predictor_68_face_landmarks.dat")
+predictor = dlib.shape_predictor('models/shape_predictor_68_face_landmarks.dat')
 # load the face recognition model
-face_recognition_model = dlib.face_recognition_model_v1("models/dlib_face_recognition_resnet_model_v1.dat")
+face_recognition_model = dlib.face_recognition_model_v1('models/dlib_face_recognition_resnet_model_v1.dat')
 
 
 def detect_face_rects(image):
@@ -20,15 +20,17 @@ def detect_face_landmarks(image, rect):
     return predictor(image, rect)
 
 
-# tester le ressemblance entre deux visages
-def similar(encoding1, encoding2, threshold=0.6):
+# calcule la ressemblance entre deux visages
+def calc_similarity(encodings1, encoding2):
     # compute the Euclidean distance between the two encodings of list of arrays
-    dist = np.linalg.norm(encoding1 - encoding2, axis=1)
-    
-    return dist <= threshold
+    return 1 - np.linalg.norm(encodings1 - encoding2)
+
+# tester le ressemblance entre deux visages
+def similar(encodings1, encoding2, threshold=0.4):
+    return calc_similarity(encodings1, encoding2) >= threshold
 
 
-ROOT_DIR = "photos"
+ROOT_DIR = 'photos'
 
 
 class Picture:
@@ -61,6 +63,7 @@ class Picture:
     
     @staticmethod
     def from_base64(base64pic, path=None):
+        # TODO : ne fonctionne pas :/
         #image = imread(io.BytesIO(base64.b64decode(base64pic)))
         #image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
         decode = base64.b64decode(base64pic)
@@ -76,7 +79,7 @@ class Album:
     def __init__(self, name):
         self.name = name
         self.pictures = []
-        if os.path.isfile(ROOT_DIR + os.sep + self.name + ".pickle"):
+        if os.path.isfile(ROOT_DIR + os.sep + self.name + '.pickle'):
             # si le fichier pickle existe, on le charge
             self.load()
         else:
@@ -84,14 +87,14 @@ class Album:
             self.update()
         
     def save(self):
-        output = open(ROOT_DIR + os.sep + self.name + ".pickle", "wb")
-        #on parcours tous les dossiers du dataset
+        output = open(ROOT_DIR + os.sep + self.name + '.pickle', 'wb')
+        # on parcourt tous les dossiers du dataset
         for picture in self.pictures:
             pickle.dump(picture, output)
         output.close()
         
     def load(self):
-        with open(ROOT_DIR + os.sep + self.name + ".pickle", "rb") as f:
+        with open(ROOT_DIR + os.sep + self.name + '.pickle', 'rb') as f:
             try:
                 self.pictures = []
                 while True:
@@ -101,23 +104,23 @@ class Album:
                 pass
             
     def update(self):
-        print("updating album", self.name)
+        print('updating album', self.name)
         self.pictures = []
-        #on parcours toutes les images du dossier
+        # on parcourt toutes les images du dossier
         for image_name in os.listdir(ROOT_DIR + os.sep + self.name):
-            print("\t", image_name)
+            print('\t', image_name)
             self.pictures.append(Picture.from_file(ROOT_DIR + os.sep + self.name + os.sep + image_name))
         self.save()
     
-    def search(self, encoding):
-        results = []
-        faceIndices = []
-        for picture in self.pictures:
-            for faceIndex, e in enumerate(picture.encodings):
-                if similar([ encoding ], e):
-                    results.append(picture)
-                    faceIndices.append(faceIndex)
-        return results, faceIndices
+    def get_search_by_face(self, faceEncoding):
+        result_pictures = []
+        for id, picture in enumerate(self.pictures):
+            faces = []
+            for eId, e in enumerate(picture.encodings):
+                faces.append({ 'id': eId, 'similarity': calc_similarity([ faceEncoding ], e) })
+            result_pictures.append({ 'id': id, 'faces': faces })
+        result_pictures.sort(key=lambda p: -max((f['similarity'] for f in p['faces']), default=0))
+        return result_pictures
     
     def to_dict(self):
         return { 'name': self.name, 'pictures': [ p.to_dict() for p in self.pictures ] }
@@ -130,5 +133,5 @@ def get_albums():
             albums[album_name] = Album(album_name)
     return albums
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     get_albums()

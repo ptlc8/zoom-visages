@@ -40,13 +40,12 @@ def get_album_search(album_name):
         if 0 > faceIndex or faceIndex >= len(picture.encodings):
             return error('face not found')
         encoding = picture.encodings[faceIndex]
-        #return success([p.to_dict() for p in album.search(Picture.from_file("original.jpg").encodings[0])])
-        return success([p.to_dict() for p in album.search(encoding)[0]])
+        return success(album.get_search_by_face(encoding))
     elif request.args.get('picture'):
         pic = Picture.from_base64(request.args.get('picture'))
         if len(pic.encodings) == 0:
             return error('no face found')
-        return success(album.search(pic.encodings[0]))
+        return success(album.get_search_by_face(pic.encodings[0]))
     else:
         return error('missing parameters')
 
@@ -59,6 +58,7 @@ def get_photo(path):
 
 
 # Front
+
 @app.route('/<path:path>')
 def get_front(path):
     return send_from_directory('front/dist', path)

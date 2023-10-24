@@ -1,21 +1,34 @@
 <script setup>
-import { defineProps, ref, watch } from 'vue'
+import { computed, defineProps, ref, watch } from 'vue'
 import Api from '../api.js'
 
 import Picture from './Picture.vue'
 
-var props = defineProps({
+const props = defineProps({
     name: String
 });
 
-const pictures = ref([]);
+const albumPictures = ref([]);
 const searchSourceUrl = ref(null);
 const selectedFace = ref(null);
-const searchResults = ref(null);
+const searchResults = ref(null); // [{picture:0,faces:[{similarity:0.5}]}]
+const similarityThreshold = ref(0.5);
+
+const pictures = computed(() => {
+    var pictures = [];
+    if (searchResults.value == null)
+        return albumPictures.value.map((p, i) => ({ picture: p, id: i }));
+    for (let p of searchResults.value) {
+        if (Math.max(...p.faces.map(f => f.similarity)) < similarityThreshold.value)
+            continue;
+        pictures.push({ ...p, picture: albumPictures.value[p.id] });
+    }
+    return pictures;
+});
 
 function updateAlbum() {
     Api.getAlbum(props.name).then(album => {
-        pictures.value = album.pictures;
+        albumPictures.value = album.pictures;
         searchResults.value = null;
     });
 }
@@ -43,9 +56,9 @@ function loadSourceFromFaceFile() {
 function selectFace(pictureIndex, faceIndex) {
     selectedFace.value = { pictureIndex, faceIndex };
     var img = new Image();
-    img.src = 'http://localhost:5000/' + pictures.value[pictureIndex].path;
+    img.src = 'http://localhost:5000/' + albumPictures.value[pictureIndex].path;
     img.onload = () => {
-        var picture = pictures.value[pictureIndex];
+        var picture = albumPictures.value[pictureIndex];
         var face = picture.faces[faceIndex];
         var searchSourceCanvas = document.createElement('canvas');
         var ctx = searchSourceCanvas.getContext('2d');
@@ -58,12 +71,12 @@ function selectFace(pictureIndex, faceIndex) {
 
 function searchFace() {
     if (selectedFace.value.dataURL) {
-        Api.searchFaceWithImage(props.name, selectedFace.value.dataURL.replace(/.*;/,'')).then(pictures => {
-            searchResults.value = pictures;
+        Api.searchFaceWithImage(props.name, selectedFace.value.dataURL.replace(/.*;/,'')).then(results => {
+            searchResults.value = results;
         });
     } else if (selectedFace.value.pictureIndex != null) {
-        Api.searchFaceWithFace(props.name, selectedFace.value.pictureIndex, selectedFace.value.faceIndex).then(pictures => {
-            searchResults.value = pictures;
+        Api.searchFaceWithFace(props.name, selectedFace.value.pictureIndex, selectedFace.value.faceIndex).then(results => {
+            searchResults.value = results;
         });
     }
 }
@@ -79,10 +92,13 @@ function searchFace() {
             <span v-else class="tip">Clique sur un visage pour le sélectionner</span>
             <div v-if="selectedFace" class="actions">
                 <button @click="searchFace">Rechercher ce visage</button>
+                <label for="similarity">Seuil de similarité :</label>
+                <input v-model="similarityThreshold" id="similarity" type="range" min="0" max="1" step="0.01" />
+                <button @click="searchResults = null" v-if="searchResults != null">Annuler</button>
             </div>
         </div>
         <div class="pictures">
-            <Picture v-if="pictures" v-for="picture, index in (searchResults || pictures)" :picture="picture" @search-face="selectFace(index, $event.faceIndex)" />
+            <Picture v-if="pictures" v-for="picture in pictures" :picture="picture.picture" :faces-results="picture.faces" @search-face="selectFace(picture.id, $event.faceIndex)" />
         </div>
     </div>
 </template>
