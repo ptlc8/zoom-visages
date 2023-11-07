@@ -39,7 +39,7 @@ function searchFace(faceIndex) {
 <template>
     <div>
         <div class="picture">
-            <img :src="'http://localhost:5000/' + picture.path" />
+            <img :src="'' + picture.path" />
             <div v-for="face in faces" @click="searchFace(face.id)" class="face" :style="faceToCss(face)">
                 <div v-if="face.similarity !== undefined" class="similarity">{{ Math.round(face.similarity * 100) }}%</div>
             </div>

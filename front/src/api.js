@@ -22,7 +22,7 @@ function sendApiRequest(method, endpoint, parameters, message) {
             .map(([k, v]) =>
                 v instanceof Array ? v.map(i => k + "[]=" + encodeURIComponent(i)).join("&") : k + "=" + encodeURIComponent(v)
             ).join("&");
-        fetch("http://localhost:5000" + "/api/" + endpoint + "?" + urlParameters, { method })
+        fetch("api/" + endpoint + "?" + urlParameters, { method })
             .then(res => res.json())
             .then(function (response) {
                 if (!response.success) {

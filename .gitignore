@@ -1,8 +1,10 @@
 # python compiled files
-__pycache__/
+/__pycache__/
 
 # python environments
-venv/
+/venv/
 
 # dossier contenant les photos et les fichiers pickle
-photos/
+/photos/*
+
+!.gitkeep

@@ -56,7 +56,7 @@ function loadSourceFromFaceFile() {
 function selectFace(pictureIndex, faceIndex) {
     selectedFace.value = { pictureIndex, faceIndex };
     var img = new Image();
-    img.src = 'http://localhost:5000/' + albumPictures.value[pictureIndex].path;
+    img.src = '' + albumPictures.value[pictureIndex].path;
     img.onload = () => {
         var picture = albumPictures.value[pictureIndex];
         var face = picture.faces[faceIndex];
