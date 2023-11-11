@@ -128,9 +128,9 @@ class Album:
     
 def get_albums():
     albums = {}
-    for album_name in os.listdir(ROOT_DIR):
-        if os.path.isdir(ROOT_DIR + os.sep + album_name):
-            albums[album_name] = Album(album_name)
+    for entry in os.scandir(ROOT_DIR):
+        if entry.is_dir():
+            albums[entry.name] = Album(entry.name)
     return albums
 
 if __name__ == '__main__':

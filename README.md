@@ -18,12 +18,17 @@ $ cd front
 $ npm install
 ```
 
-## Lancement en mode développement
+## Compilation du front
 
 ```sh
 $ cd front
 $ npm run build
 $ cd ..
+```
+
+## Lancement en mode développement
+
+```sh
 $ venv/bin/python3 -m flask run
 ```
 
